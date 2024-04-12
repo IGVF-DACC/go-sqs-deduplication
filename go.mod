@@ -1,4 +1,4 @@
-module github.com/keenangraham/go-sqs-deduplication
+module github.com/IGVF-DACC/go-sqs-deduplication
 
 go 1.21.5
 

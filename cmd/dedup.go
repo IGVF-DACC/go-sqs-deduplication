@@ -5,8 +5,8 @@ import (
     "fmt"
     "flag"
     "os"
-    "github.com/keenangraham/go-sqs-deduplication/internal/sqs"
-    "github.com/keenangraham/go-sqs-deduplication/internal/dedup"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/sqs"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/dedup"
 )
 
 

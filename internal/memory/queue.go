@@ -3,7 +3,7 @@ package memory
 
 import (
 	"sync"
-    "github.com/keenangraham/go-sqs-deduplication/internal/dedup"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/dedup"
 )
 
 
