@@ -5,8 +5,8 @@ import (
     "sync"
     "time"
     "testing"
-    "github.com/keenangraham/go-sqs-deduplication/internal/memory"
-    "github.com/keenangraham/go-sqs-deduplication/internal/dedup"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/memory"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/dedup"
 )
 
 

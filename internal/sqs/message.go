@@ -5,7 +5,7 @@ import (
     "fmt"
     "encoding/json"
     "github.com/aws/aws-sdk-go-v2/service/sqs/types"
-    "github.com/keenangraham/go-sqs-deduplication/internal/dedup"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/dedup"
 )
 
 

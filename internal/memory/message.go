@@ -4,7 +4,7 @@ package memory
 import (
     "fmt"
     "math/rand"
-    "github.com/keenangraham/go-sqs-deduplication/internal/dedup"
+    "github.com/IGVF-DACC/go-sqs-deduplication/internal/dedup"
 )
 
 
