@@ -20,9 +20,22 @@ type Puller struct {
 
 
 // Only call with mutex locked.
+func (p *Puller) checkExistingMessage(uniqueID string) (QueueMessage, bool) {
+    if keepMessage, exists := p.state.keepMessages[uniqueID]; exists {
+        return keepMessage, true
+    }
+    if inMemoryMessage, exists := p.state.storedInMemoryMessages[uniqueID]; exists {
+        return inMemoryMessage, true
+    }
+    return nil, false
+}
+
+
+// Only call with mutex locked.
 func (p *Puller) processMessages(messages []QueueMessage) {
     for _, message := range messages {
-        if storedMessage, exists := p.state.keepMessages[message.UniqueID()]; exists {
+        storedMessage, exists := p.checkExistingMessage(message.UniqueID())
+        if exists {
             if storedMessage.MessageID() != message.MessageID() {
                 p.state.deleteMessages[message.ReceiptHandle()] = struct{}{}
             } else {
