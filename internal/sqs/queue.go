@@ -80,15 +80,15 @@ func (q *Queue) PullMessagesBatch() ([]dedup.QueueMessage, error) {
 
 func (q *Queue) DeleteMessagesBatch(receiptHandles []string) {
     var entries []types.DeleteMessageBatchRequestEntry
-	for i, receiptHandle := range receiptHandles {
+    for i, receiptHandle := range receiptHandles {
         entries = append(entries, types.DeleteMessageBatchRequestEntry{
             Id: aws.String(fmt.Sprintf("message_%d", i)),
             ReceiptHandle: aws.String(receiptHandle),
         })
     }
     input := _sqs.DeleteMessageBatchInput{
-		Entries:  entries,
-		QueueUrl: q.config.QueueUrl,
+        Entries:  entries,
+        QueueUrl: q.config.QueueUrl,
     }
     result, err := q.client.DeleteMessageBatch(context.TODO(), &input)
     if err != nil {
@@ -110,8 +110,8 @@ func (q *Queue) ResetVisibilityBatch(receiptHandles []string) {
         })
     }
     input := _sqs.ChangeMessageVisibilityBatchInput{
-		Entries: entries,
-		QueueUrl: q.config.QueueUrl,
+        Entries: entries,
+        QueueUrl: q.config.QueueUrl,
     }
     result, err := q.client.ChangeMessageVisibilityBatch(context.TODO(), &input)
     if err != nil {

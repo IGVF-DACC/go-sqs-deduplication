@@ -228,6 +228,7 @@ func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
         }
         if d.atMaxInflight() {
             fmt.Println("Max inflight for keep messages")
+            // TODO - write to_keep to memory (other queue)
             break
         }
         if d.timedOut() {
@@ -248,10 +249,12 @@ func (d *Deduplicator) resetVisibilityOnMessagesToKeep() {
 
 
 func (d *Deduplicator) Run() {
+    // TODO - write restore messages from memory to queue
     fmt.Println("Running deduplicator")
     d.pullMessagesAndDeleteDuplicates()
     fmt.Println("Resetting visibility on messages to keep")
     d.resetVisibilityOnMessagesToKeep()
+    // TODO - write restore messages from memory to queue
     fmt.Println("All done")
 }
 

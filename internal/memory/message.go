@@ -17,7 +17,7 @@ type InMemoryQueueMessage struct {
 
 
 func (m InMemoryQueueMessage) UniqueID() string {
-	return m.uniqueID
+    return m.uniqueID
 }
 
 
