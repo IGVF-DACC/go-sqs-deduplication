@@ -13,6 +13,7 @@ type Mover struct {
     state *SharedState
     wg *sync.WaitGroup
     messagesExist bool
+    isMemoryOverflow bool
 }
 
 
@@ -23,20 +24,15 @@ func (m *Mover) getBatchOfMessagesToMove() []QueueMessage {
         for i := 0; i < maxMessages; i++ {
             message, ok := <- m.moveChannel
             if !ok {
-                m.messagesExist = false
                 return messages
             }
             messages = append(messages, message)
         }
+        return messages
     } else {
         messages, err := p.fromQueue.PullMessagesBatch()
         if err != nil {
             fmt.Println("Error pulling messages in mover", err)
-            m.messagesExist = false
-            return messages
-        }
-        if len(messages) == 0 {
-            m.messagesExist = false
         }
         return messages
     }
@@ -57,14 +53,44 @@ func (m *Mover) deleteBatchOfMessages(messages []QueueMessage) {
 }
 
 
+func (m *Mover) addToStoredInMemoryMessages(messages []QueueMessage) {
+    m.state.mu.Lock()
+    defer m.state.mu.Unlock()
+    for i, message := range messages {
+        m.state.storedInMemoryMessages[message.UniqueID()] = message
+    }
+}
+
+
+func (m *Mover) deleteFromKeepMessages(messages []QueueMessage) {
+    m.state.mu.Lock()
+    defer m.state.mu.Unlock()
+    for i, message := range messages {
+        if _, ok := m.state.keepMessages[message.UniqueID()]; ok {
+            delete(m.state.keepMessages, message.UniqueID())
+        }
+    }
+}
+
+
+
 func (m *Mover) moveMessages() {
     for {
         messages := m.getBatchOfMessagesToMove()
-    }
-    receiptHandles := d.getBatchOfMessagesToDelete()
-    for len(receiptHandles) > 0 {
-        d.queue.DeleteMessagesBatch(receiptHandles)
-        receiptHandles = d.getBatchOfMessagesToDelete()
+        if len(messages) == 0 {
+            m.messagesExist = false
+            break
+        }
+        err := m.putBatchOfMessages(messages)
+        if err != nil {
+            fmt.Println("Error putting messages in mover, breaking", err)
+            break
+        }
+        m.deleteBatchOfMessages(messages)
+        if isMemoryOverflow {
+            m.addToStoredInMemoryMessages(messages)
+            m.deleteFromKeepMessages(messages)
+        }
     }
 }
 
