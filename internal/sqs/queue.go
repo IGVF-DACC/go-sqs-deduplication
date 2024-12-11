@@ -90,10 +90,10 @@ func (q *Queue) DeleteMessagesBatch(receiptHandles []string) {
 		Entries:  entries,
 		QueueUrl: q.config.QueueUrl,
     }
-	result, err := q.client.DeleteMessageBatch(context.TODO(), &input)
-	if err != nil {
+    result, err := q.client.DeleteMessageBatch(context.TODO(), &input)
+    if err != nil {
         fmt.Println("Error deleting batch", err)
-	}
+    }
     for _, failure := range result.Failed {
         fmt.Printf("Failed to delete message: ID %s. Error code: %s, Error message: %s\n", *failure.Id, *failure.Code, *failure.Message)
     }
@@ -112,11 +112,11 @@ func (q *Queue) ResetVisibilityBatch(receiptHandles []string) {
     input := _sqs.ChangeMessageVisibilityBatchInput{
 		Entries: entries,
 		QueueUrl: q.config.QueueUrl,
-	}
+    }
     result, err := q.client.ChangeMessageVisibilityBatch(context.TODO(), &input)
     if err != nil {
         fmt.Println("Error reseting visibility batch", err)
-	}
+    }
     for _, fail := range result.Failed {
         fmt.Printf("Failed ID: %s, Code: %s, Message: %s\n", *fail.Id, *fail.Code, *fail.Message)
     }
