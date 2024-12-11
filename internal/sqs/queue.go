@@ -121,3 +121,30 @@ func (q *Queue) ResetVisibilityBatch(receiptHandles []string) {
         fmt.Printf("Failed ID: %s, Code: %s, Message: %s\n", *fail.Id, *fail.Code, *fail.Message)
     }
 }
+
+
+func (q *Queue) PutMessagesBatch(messages []dedup.QueueMessage) error {
+    var entries []types.SendMessageBatchRequestEntry
+    for i, message := range messages {
+        entries = append(entries, types.SendMessageBatchRequestEntry{
+            Id: aws.String(fmt.Sprintf("message_%d", i)),
+            MessageBody: aws.String(message.RawBody()),
+        })
+    }
+    input := _sqs.SendMessageBatchInput{
+        Entries: entries,
+        QueueUrl: q.config.QueueUrl,
+    }
+    result, err := q.client.SendMessageBatch(context.TODO(), input)
+    if err != nil {
+        return fmt.Errorf("error sending message batch: %w", err)
+    }
+    if len(result.Failed) > 0 {
+        for _, fail := range result.Failed {
+            fmt.Printf("Failed to send message: ID %s. Error code: %s, Error message: %s\n",
+                       *fail.Id, *fail.Code, *fail.Message)
+        }
+        return fmt.Errorf("some messages failed to send")
+    }
+    return nil
+}

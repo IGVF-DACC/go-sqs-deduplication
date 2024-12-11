@@ -34,6 +34,7 @@ type Deduplicator struct {
     pullers []*Puller
     deleters []*Deleter
     reseters []*Reseter
+    movers []*Mover
     keepChannel chan string
     deleteChannel chan string
 }
@@ -102,6 +103,20 @@ func (d *Deduplicator) initReseters() {
 }
 
 
+func (d *Deduplicator) initMovers() {
+    numWorkers := d.config.NumWorkers
+    movers := make([]*Mover, 0, numWorkers)
+    for i := 0; i < numWorkers; i++ {
+        mover := &Mover{
+            queue: d.config.Queue,
+            memoryQueue: d.config.MemoryQueue,
+            wg: d.wg,
+        }
+        movers = append(movers, mover)
+    }
+    d.movers = movers
+
+
 func (d *Deduplicator) startPullers() {
       startAll(d.pullers)
 }
@@ -116,6 +131,9 @@ func (d *Deduplicator) startReseters() {
       startAll(d.reseters)
 }
 
+func (d *Deduplicator) startMovers() {
+    startAll(d.movers)
+}
 
 func (d *Deduplicator) initKeepChannel() {
     d.keepChannel = make(chan string, 10000)
@@ -252,9 +270,9 @@ func (d *Deduplicator) Run() {
     // TODO - write restore messages from memory to queue
     fmt.Println("Running deduplicator")
     d.pullMessagesAndDeleteDuplicates()
+    // TODO - write restore messages from memory to queue
     fmt.Println("Resetting visibility on messages to keep")
     d.resetVisibilityOnMessagesToKeep()
-    // TODO - write restore messages from memory to queue
     fmt.Println("All done")
 }
 

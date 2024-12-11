@@ -1,4 +1,4 @@
-package dedup_test
+pdeleackage dedup_test
 
 import (
     "testing"
