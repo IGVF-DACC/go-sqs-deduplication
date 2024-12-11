@@ -9,9 +9,10 @@ import (
 
 
 type InMemoryQueueMessage struct {
-	uniqueID      string
-	messageID     string
-	receiptHandle string
+    uniqueID      string
+    messageID     string
+    receiptHandle string
+    rawBody string
 }
 
 
@@ -21,12 +22,17 @@ func (m InMemoryQueueMessage) UniqueID() string {
 
 
 func (m InMemoryQueueMessage) MessageID() string {
-	return m.messageID
+    return m.messageID
 }
 
 
 func (m InMemoryQueueMessage) ReceiptHandle() string {
-	return m.receiptHandle
+    return m.receiptHandle
+}
+
+
+func (m InMemoryQueueMessage) RawBody() string {
+    return m.rawBody
 }
 
 
@@ -36,10 +42,12 @@ func GenerateInMemoryMessages(numMessages int) []dedup.QueueMessage {
         uniqueID := fmt.Sprintf("uuid-%d", i)
         messageID := fmt.Sprintf("msg-%d", rand.Int())
         receiptHandle := fmt.Sprintf("receipt-%d", rand.Int())
+        rawBody := ""
         message := InMemoryQueueMessage{
             uniqueID:      uniqueID,
             messageID:     messageID,
             receiptHandle: receiptHandle,
+            rawBody: rawBody,
         }
         messages = append(messages, message)
     }
@@ -52,10 +60,12 @@ func MakeDuplicateInMemoryMessages(uniqueID string, numMessages int) []dedup.Que
     for i := 1; i <= numMessages; i++ {
         messageID := fmt.Sprintf("msg-%d", rand.Int())
         receiptHandle := fmt.Sprintf("receipt-%d", rand.Int())
+        rawBody := ""
         message := InMemoryQueueMessage{
             uniqueID:      uniqueID,
             messageID:     messageID,
             receiptHandle: receiptHandle,
+            rawBody: rawBody,
         }
         messages = append(messages, message)
     }
