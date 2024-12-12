@@ -21,7 +21,7 @@ func (m *Mover) SetMoveChannel(moveChannel chan QueueMessage) {
 }
 
 
-func (m *Mover) getBatchOfMessagesToMove() []QueueMessage {
+func (m *Mover) getBatchOfMessages() []QueueMessage {
     maxMessages := 10
     var messages []QueueMessage
     if m.moveChannel != nil {
@@ -80,7 +80,7 @@ func (m *Mover) deleteFromKeepMessages(messages []QueueMessage) {
 
 func (m *Mover) moveMessages() {
     for {
-        messages := m.getBatchOfMessagesToMove()
+        messages := m.getBatchOfMessages()
         if len(messages) == 0 {
             break
         }
@@ -90,7 +90,7 @@ func (m *Mover) moveMessages() {
             break
         }
         m.deleteBatchOfMessages(messages)
-        if isMemoryOverflow {
+        if flushToStorage {
             m.addToStoredMessages(messages)
             m.deleteFromKeepMessages(messages)
         }

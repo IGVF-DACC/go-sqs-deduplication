@@ -107,6 +107,7 @@ func (d *Deduplicator) initReseters() {
 
 
 func (d *Deduplicator) initFlushToStorageMovers() {
+    d.initMoveChannel()
     numWorkers := d.config.NumWorkers
     movers := make([]*Mover, 0, numWorkers)
     for i := 0; i < numWorkers; i++ {
@@ -157,13 +158,13 @@ func (d *Deduplicator) startReseters() {
 }
 
 
-func (d *Deduplicator) startFlushToMemoryMovers() {
-    startAll(d.flushToMemoryMovers)
+func (d *Deduplicator) startFlushToStorageMovers() {
+    startAll(d.flushToStorageMovvers)
 }
 
 
-func (d *Deduplicator) startRestoryFromMemoryMovers() {
-    startAll(d.retoreFromMemoryMovers)
+func (d *Deduplicator) startRestorFromStorageMovers() {
+    startAll(d.retoreFromStorageMovers)
 }
 
 
@@ -178,7 +179,7 @@ func (d *Deduplicator) initDeleteChannel() {
 
 
 func (d *Deduplicator) initMoveChannel() {
-    d.moveChannel = make(chan QueueMessage, 10000)
+    d.moveChannel = make(chan QueueMessage)
 }
 
 
@@ -192,7 +193,7 @@ func (d *Deduplicator) resetDeleteChannel() {
 
 func (d *Deduplicator) resetMoveChannel() {
     d.initMoveChannel()
-    for _, mover := range d.flushToMemoryMovers {
+    for _, mover := range d.flushToStorageMovers {
         mover.SetMoveChannel(d.moveChannel)
     }
 }
@@ -248,6 +249,20 @@ func (d *Deduplicator) sendMessagesForVisibilityReset() {
 }
 
 
+func (d *Deduplicator) sendMessagesForFlushingToStorage() {
+    d.wg.Add(1)
+    go func() {
+        defer d.wg.Done()
+        d.state.mu.Lock()
+        defer d.state.mu.Unlock()
+        for _, message := range d.state.keepMessages {
+            d.moveChannel <- message
+        }
+        close(d.keepChannel)
+    }()
+}
+
+
 func (d *Deduplicator) printInfo() {
     d.state.mu.Lock()
     fmt.Println("Unique messages to keep:", len(d.state.keepMessages))
@@ -274,6 +289,7 @@ func (d *Deduplicator) waitForWorkToFinish() {
 func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
     d.initPullers()
     d.initDeleters()
+    d.initFlushToStorageMovers()
     // Run pull message/delete duplicates loop until no more
     // messages in queue, or max inflight of unique messages reached.
     for {
@@ -291,8 +307,12 @@ func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
         }
         if d.atMaxInflight() {
             fmt.Println("Max inflight for keep messages")
+            fmt.Println("Flushing keep messages to storage")
+            d.sendMessagesForFlushingToStorage()
+            d.startFlushToStorageMovers()
+            d.waitForWorkToFinish()
+            d.resetMoveChannel()
             // TODO - write to_keep to memory (other queue)
-            break
         }
         if d.timedOut() {
             fmt.Println("Stopping because of time limit")
