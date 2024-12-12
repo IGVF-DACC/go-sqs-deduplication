@@ -362,6 +362,6 @@ func (d *Deduplicator) RunForever(secondsToSleepBetweenRuns int) {
         d.Run()
         fmt.Println("Sleeping seconds", secondsToSleepBetweenRuns)
         time.Sleep(time.Duration(secondsToSleepBetweenRuns) * time.Second)
-        d.state.ResetTimeout()
+        d.state.Reset()
     }
 }
