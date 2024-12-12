@@ -77,7 +77,6 @@ func (m *Mover) deleteFromKeepMessages(messages []QueueMessage) {
 }
 
 
-
 func (m *Mover) moveMessages() {
     for {
         messages := m.getBatchOfMessages()

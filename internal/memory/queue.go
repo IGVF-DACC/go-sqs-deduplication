@@ -48,7 +48,6 @@ func (q *InMemoryQueue) PullMessagesBatch() ([]dedup.QueueMessage, error) {
 }
 
 
-
 func (q *InMemoryQueue) DeleteMessagesBatch(receiptHandles []string) {
     q.mu.Lock()
     defer q.mu.Unlock()

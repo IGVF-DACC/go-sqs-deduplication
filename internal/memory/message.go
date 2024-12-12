@@ -42,7 +42,7 @@ func GenerateInMemoryMessages(numMessages int) []dedup.QueueMessage {
         uniqueID := fmt.Sprintf("uuid-%d", i)
         messageID := fmt.Sprintf("msg-%d", rand.Int())
         receiptHandle := fmt.Sprintf("receipt-%d", rand.Int())
-        rawBody := ""
+        rawBody := `{"metadata": {"xid": "3860392", "tid": "user-initiated"}, "data": {"uuid": "cfb1ab6a-23ca-444e-a6fe-7da736a78dcf"}}`
         message := InMemoryQueueMessage{
             uniqueID:      uniqueID,
             messageID:     messageID,

@@ -125,16 +125,15 @@ func TestDeduplicatorPartialProcessingBecauseOfMaxInflight(t *testing.T) {
     }
     deduplicator = dedup.NewDeduplicator(config)
     deduplicator.Run()
-    if len(inMemoryQueue.GetDeletedMessages()) != 0 {
-        t.Errorf("Expected 0 messages to be deleted, got %d", len(inMemoryQueue.GetDeletedMessages()))
+    if len(inMemoryQueue.GetDeletedMessages()) != 8000 {
+        t.Errorf("Expected 8000 messages to be deleted, got %d", len(inMemoryQueue.GetDeletedMessages()))
     }
-    if len(inMemoryQueue.GetResetMessages()) != 790 {
-        t.Errorf("Expected 790 messages to be reset, got %d", len(inMemoryQueue.GetResetMessages()))
+    if len(inMemoryQueue.GetResetMessages()) != 0 {
+        t.Errorf("Expected 0 messages to be reset, got %d", len(inMemoryQueue.GetResetMessages()))
     }
-    if inMemoryQueue.MessagesLen() == 0 {
-        t.Error("Queue should have messages")
+    if inMemoryQueue.MessagesLen() != 3001 {
+        t.Errorf("Expected 3001 messages to be on queue, got %d", inMemoryQueue.MessagesLen())
     }
-    return
     // MaxInflight under total, over total unique
     inMemoryQueue = memory.NewInMemoryQueue(10)
     generatedMessages = memory.GenerateInMemoryMessages(3000)
