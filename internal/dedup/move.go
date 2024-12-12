@@ -9,11 +9,15 @@ import (
 type Mover struct {
     fromQueue Queue
     toQueue Queue
-    moveChannel chan Message
+    moveChannel chan QueueMessage // Messages pulled from here if not nil, otherwise uses fromQueue.
     state *SharedState
     wg *sync.WaitGroup
-    messagesExist bool
-    isMemoryOverflow bool
+    flushToStorage bool // Is this move part of flushing memory to storage?
+}
+
+
+func (m *Mover) SetMoveChannel(moveChannel chan QueueMessage) {
+    m.moveChannel = moveChannel
 }
 
 
@@ -30,7 +34,7 @@ func (m *Mover) getBatchOfMessagesToMove() []QueueMessage {
         }
         return messages
     } else {
-        messages, err := p.fromQueue.PullMessagesBatch()
+        messages, err := m.fromQueue.PullMessagesBatch()
         if err != nil {
             fmt.Println("Error pulling messages in mover", err)
         }
@@ -46,18 +50,18 @@ func (m *Mover) putBatchOfMessages(messages []QueueMessage) error {
 
 func (m *Mover) deleteBatchOfMessages(messages []QueueMessage) {
     receiptHandles := []string
-    for i, message := range messages {
+    for _, message := range messages {
         receiptHandles = append(receiptHandles, message.RecieptHandle())
     }
     m.fromQueue.DeleteMessagesBatch(receiptHandles)
 }
 
 
-func (m *Mover) addToStoredInMemoryMessages(messages []QueueMessage) {
+func (m *Mover) addToStoredMessages(messages []QueueMessage) {
     m.state.mu.Lock()
     defer m.state.mu.Unlock()
-    for i, message := range messages {
-        m.state.storedInMemoryMessages[message.UniqueID()] = message
+    for _, message := range messages {
+        m.state.storedMessages[message.UniqueID()] = message
     }
 }
 
@@ -65,7 +69,7 @@ func (m *Mover) addToStoredInMemoryMessages(messages []QueueMessage) {
 func (m *Mover) deleteFromKeepMessages(messages []QueueMessage) {
     m.state.mu.Lock()
     defer m.state.mu.Unlock()
-    for i, message := range messages {
+    for _, message := range messages {
         if _, ok := m.state.keepMessages[message.UniqueID()]; ok {
             delete(m.state.keepMessages, message.UniqueID())
         }
@@ -78,7 +82,6 @@ func (m *Mover) moveMessages() {
     for {
         messages := m.getBatchOfMessagesToMove()
         if len(messages) == 0 {
-            m.messagesExist = false
             break
         }
         err := m.putBatchOfMessages(messages)
@@ -88,7 +91,7 @@ func (m *Mover) moveMessages() {
         }
         m.deleteBatchOfMessages(messages)
         if isMemoryOverflow {
-            m.addToStoredInMemoryMessages(messages)
+            m.addToStoredMessages(messages)
             m.deleteFromKeepMessages(messages)
         }
     }
@@ -104,12 +107,13 @@ func (m *Mover) Start() {
 }
 
 
-func NewMover(fromQueue Queue, toQueue Queue, moveChannel chan QueueMessage, state *SharedState, messagesExist bool, wg *sync.Waitgroup) *Mover {
+func NewMover(fromQueue Queue, toQueue Queue, moveChannel chan QueueMessage, state *SharedState, flushToStorage bool, wg *sync.Waitgroup) *Mover {
     return &Mover{
-        queue: queue,
-        memoryQueue: memoryQueue,
+        fromQueue: queue,
+        toQueue: memoryQueue,
+        moveChannel: moveChannel,
         state: state,
-        messagesExist: messagesExist,
+        flushToStorage: flushToStorage,
         wg: wg,
     }
 }

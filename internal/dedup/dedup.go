@@ -22,6 +22,7 @@ func startAll[T Startable](actors []T) {
 
 type DeduplicatorConfig struct {
     Queue Queue
+    StorageQueue Queue
     NumWorkers int
     MaxInflight int
 }
@@ -34,9 +35,11 @@ type Deduplicator struct {
     pullers []*Puller
     deleters []*Deleter
     reseters []*Reseter
-    movers []*Mover
+    flushToStorageMovers []*Mover
+    restoreFromStorageMovers []*Mover
     keepChannel chan string
     deleteChannel chan string
+    moveChannel chan QueueMessage
 }
 
 
@@ -103,18 +106,40 @@ func (d *Deduplicator) initReseters() {
 }
 
 
-func (d *Deduplicator) initMovers() {
+func (d *Deduplicator) initFlushToStorageMovers() {
     numWorkers := d.config.NumWorkers
     movers := make([]*Mover, 0, numWorkers)
     for i := 0; i < numWorkers; i++ {
         mover := &Mover{
-            queue: d.config.Queue,
-            memoryQueue: d.config.MemoryQueue,
+            fromQueue: d.config.Queue,
+            toQueue: d.config.StorageQueue,
+            moveChannel: d.moveChannel,
+            state: state,
+            flushToStorage: true,
             wg: d.wg,
         }
         movers = append(movers, mover)
     }
-    d.movers = movers
+    d.flushToStorageMovers = movers
+}
+
+
+func (d *Deduplicator) initRestoreFromStorageMovers() {
+    numWorkers := d.config.NumWorkers
+    movers := make([]*Mover, 0, numWorkers)
+    for i := 0; i < numWorkers; i++ {
+        mover := &Mover{
+            fromQueue: d.config.StorageQueue,
+            toQueue: d.config.Queue,
+            moveChannel: nil,
+            state: state,
+            flushToStorage: false,
+            wg: d.wg,
+        }
+        movers = append(movers, mover)
+    }
+    d.restoreFromStorageMovers = movers
+}
 
 
 func (d *Deduplicator) startPullers() {
@@ -131,9 +156,16 @@ func (d *Deduplicator) startReseters() {
       startAll(d.reseters)
 }
 
-func (d *Deduplicator) startMovers() {
-    startAll(d.movers)
+
+func (d *Deduplicator) startFlushToMemoryMovers() {
+    startAll(d.flushToMemoryMovers)
 }
+
+
+func (d *Deduplicator) startRestoryFromMemoryMovers() {
+    startAll(d.retoreFromMemoryMovers)
+}
+
 
 func (d *Deduplicator) initKeepChannel() {
     d.keepChannel = make(chan string, 10000)
@@ -145,10 +177,23 @@ func (d *Deduplicator) initDeleteChannel() {
 }
 
 
+func (d *Deduplicator) initMoveChannel() {
+    d.moveChannel = make(chan QueueMessage, 10000)
+}
+
+
 func (d *Deduplicator) resetDeleteChannel() {
     d.initDeleteChannel()
     for _, deleter := range d.deleters {
         deleter.SetDeleteChannel(d.deleteChannel)
+    }
+}
+
+
+func (d *Deduplicator) resetMoveChannel() {
+    d.initMoveChannel()
+    for _, mover := range d.flushToMemoryMovers {
+        mover.SetMoveChannel(d.moveChannel)
     }
 }
 

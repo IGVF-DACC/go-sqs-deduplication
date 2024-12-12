@@ -24,8 +24,8 @@ func (p *Puller) checkExistingMessage(uniqueID string) (QueueMessage, bool) {
     if keepMessage, exists := p.state.keepMessages[uniqueID]; exists {
         return keepMessage, true
     }
-    if inMemoryMessage, exists := p.state.storedInMemoryMessages[uniqueID]; exists {
-        return inMemoryMessage, true
+    if storedMessage, exists := p.state.storedMessages[uniqueID]; exists {
+        return storedMessage, true
     }
     return nil, false
 }
@@ -34,9 +34,9 @@ func (p *Puller) checkExistingMessage(uniqueID string) (QueueMessage, bool) {
 // Only call with mutex locked.
 func (p *Puller) processMessages(messages []QueueMessage) {
     for _, message := range messages {
-        storedMessage, exists := p.checkExistingMessage(message.UniqueID())
+        existingMessage, exists := p.checkExistingMessage(message.UniqueID())
         if exists {
-            if storedMessage.MessageID() != message.MessageID() {
+            if existingMessage.MessageID() != message.MessageID() {
                 p.state.deleteMessages[message.ReceiptHandle()] = struct{}{}
             } else {
                 // If for some reason the same message is delivered more than once from the queue.

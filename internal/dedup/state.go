@@ -10,7 +10,7 @@ import (
 type SharedState struct {
     keepMessages map[string]QueueMessage
     deleteMessages map[string]struct{}
-    storedInMemoryMessages map[string]QueueMessage
+    storedMessages map[string]QueueMessage
     startTime time.Time
     mu sync.Mutex
 }
