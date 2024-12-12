@@ -82,6 +82,7 @@ func (m *Mover) moveMessages() {
     for {
         messages := m.getBatchOfMessages()
         if len(messages) == 0 {
+            fmt.Println("No messages found to move")
             break
         }
         err := m.putBatchOfMessages(messages)

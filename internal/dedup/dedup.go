@@ -50,6 +50,7 @@ func NewDeduplicator(config *DeduplicatorConfig) *Deduplicator {
         state: &SharedState{
             keepMessages: make(map[string]QueueMessage),
             deleteMessages: make(map[string]struct{}),
+            storedMessages: make(map[string]QueueMessage),
             startTime: time.Now(),
         }}
 }
@@ -163,7 +164,7 @@ func (d *Deduplicator) startFlushToStorageMovers() {
 }
 
 
-func (d *Deduplicator) startRestorFromStorageMovers() {
+func (d *Deduplicator) startRestoreFromStorageMovers() {
     startAll(d.retoreFromStorageMovers)
 }
 
@@ -290,6 +291,12 @@ func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
     d.initPullers()
     d.initDeleters()
     d.initFlushToStorageMovers()
+    d.initRestoreFromStorageMovers()
+    // Try restoring messages from storage queue in case
+    // messages exist from previous run.
+    fmt.Println("Restoring messages from storage queue (pre)")
+    d.startRestoreFromStorageMovers()
+    d.waitForWorkToFinish()
     // Run pull message/delete duplicates loop until no more
     // messages in queue, or max inflight of unique messages reached.
     for {
@@ -312,7 +319,6 @@ func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
             d.startFlushToStorageMovers()
             d.waitForWorkToFinish()
             d.resetMoveChannel()
-            // TODO - write to_keep to memory (other queue)
         }
         if d.timedOut() {
             fmt.Println("Stopping because of time limit")
@@ -320,6 +326,10 @@ func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
         }
         d.resetDeleteChannel() // Give deleters new channel since old one closed.
     }
+    // Restore all the messages to keep from storage queue.
+    fmt.Println("Restoring messages from storage queue (post)")
+    d.startRestoreFromStorageMovers()
+    d.waitForWorkToFinish()
 }
 
 
@@ -331,11 +341,14 @@ func (d *Deduplicator) resetVisibilityOnMessagesToKeep() {
 }
 
 
+func (d *Deduplicator) restoreMessagesFromStorage() {
+    fmt.Println("Restoring messages from storage")
+}
+
+
 func (d *Deduplicator) Run() {
-    // TODO - write restore messages from memory to queue
     fmt.Println("Running deduplicator")
     d.pullMessagesAndDeleteDuplicates()
-    // TODO - write restore messages from memory to queue
     fmt.Println("Resetting visibility on messages to keep")
     d.resetVisibilityOnMessagesToKeep()
     fmt.Println("All done")
