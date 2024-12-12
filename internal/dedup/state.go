@@ -37,6 +37,13 @@ func (s *SharedState) StoredMessagesLen() int {
 }
 
 
+func (s *SharedState) ResetTimeout() {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+    s.startTime = time.Now()
+}
+
+
 func NewSharedState(keepMessages map[string]QueueMessage, deleteMessages map[string]struct{}, storedMessages map[string]QueueMessage) *SharedState {
     return &SharedState{
         keepMessages: keepMessages,

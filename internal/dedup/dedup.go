@@ -348,11 +348,6 @@ func (d *Deduplicator) resetVisibilityOnMessagesToKeep() {
 }
 
 
-func (d *Deduplicator) restoreMessagesFromStorage() {
-    fmt.Println("Restoring messages from storage")
-}
-
-
 func (d *Deduplicator) Run() {
     fmt.Println("Running deduplicator")
     d.pullMessagesAndDeleteDuplicates()
@@ -367,5 +362,6 @@ func (d *Deduplicator) RunForever(secondsToSleepBetweenRuns int) {
         d.Run()
         fmt.Println("Sleeping seconds", secondsToSleepBetweenRuns)
         time.Sleep(time.Duration(secondsToSleepBetweenRuns) * time.Second)
+        d.state.ResetTimeout()
     }
 }
