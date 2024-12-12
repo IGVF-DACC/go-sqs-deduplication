@@ -116,7 +116,7 @@ func (d *Deduplicator) initFlushToStorageMovers() {
             fromQueue: d.config.Queue,
             toQueue: d.config.StorageQueue,
             moveChannel: d.moveChannel,
-            state: state,
+            state: d.state,
             flushToStorage: true,
             wg: d.wg,
         }
@@ -134,7 +134,7 @@ func (d *Deduplicator) initRestoreFromStorageMovers() {
             fromQueue: d.config.StorageQueue,
             toQueue: d.config.Queue,
             moveChannel: nil,
-            state: state,
+            state: d.state,
             flushToStorage: false,
             wg: d.wg,
         }
@@ -160,12 +160,12 @@ func (d *Deduplicator) startReseters() {
 
 
 func (d *Deduplicator) startFlushToStorageMovers() {
-    startAll(d.flushToStorageMovvers)
+    startAll(d.flushToStorageMovers)
 }
 
 
 func (d *Deduplicator) startRestoreFromStorageMovers() {
-    startAll(d.retoreFromStorageMovers)
+    startAll(d.restoreFromStorageMovers)
 }
 
 

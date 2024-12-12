@@ -135,7 +135,7 @@ func (q *Queue) PutMessagesBatch(messages []dedup.QueueMessage) error {
         Entries: entries,
         QueueUrl: q.config.QueueUrl,
     }
-    result, err := q.client.SendMessageBatch(context.TODO(), input)
+    result, err := q.client.SendMessageBatch(context.TODO(), &input)
     if err != nil {
         return fmt.Errorf("error sending message batch: %w", err)
     }

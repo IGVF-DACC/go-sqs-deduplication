@@ -74,6 +74,14 @@ func (q *InMemoryQueue) ResetVisibilityBatch(receiptHandles []string) {
 }
 
 
+func (q *InMemoryQueue) PutMessagesBatch(messages []dedup.QueueMessage) error {
+    q.mu.Lock()
+    defer q.mu.Unlock()
+    q.messages = append(q.messages, messages...)
+    return nil
+}
+
+
 func (q *InMemoryQueue) GetDeletedMessages() []string {
     q.mu.Lock()
     defer q.mu.Unlock()

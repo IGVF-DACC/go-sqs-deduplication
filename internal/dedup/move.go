@@ -49,9 +49,9 @@ func (m *Mover) putBatchOfMessages(messages []QueueMessage) error {
 
 
 func (m *Mover) deleteBatchOfMessages(messages []QueueMessage) {
-    receiptHandles := []string
+    var receiptHandles []string
     for _, message := range messages {
-        receiptHandles = append(receiptHandles, message.RecieptHandle())
+        receiptHandles = append(receiptHandles, message.ReceiptHandle())
     }
     m.fromQueue.DeleteMessagesBatch(receiptHandles)
 }
@@ -91,7 +91,7 @@ func (m *Mover) moveMessages() {
             break
         }
         m.deleteBatchOfMessages(messages)
-        if flushToStorage {
+        if m.flushToStorage {
             m.addToStoredMessages(messages)
             m.deleteFromKeepMessages(messages)
         }
@@ -108,10 +108,10 @@ func (m *Mover) Start() {
 }
 
 
-func NewMover(fromQueue Queue, toQueue Queue, moveChannel chan QueueMessage, state *SharedState, flushToStorage bool, wg *sync.Waitgroup) *Mover {
+func NewMover(fromQueue Queue, toQueue Queue, moveChannel chan QueueMessage, state *SharedState, flushToStorage bool, wg *sync.WaitGroup) *Mover {
     return &Mover{
-        fromQueue: queue,
-        toQueue: memoryQueue,
+        fromQueue: fromQueue,
+        toQueue: toQueue,
         moveChannel: moveChannel,
         state: state,
         flushToStorage: flushToStorage,
