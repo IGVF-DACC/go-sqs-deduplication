@@ -22,9 +22,9 @@ func (m *Mover) SetMoveChannel(moveChannel chan QueueMessage) {
 
 
 func (m *Mover) getBatchOfMessages() []QueueMessage {
-    maxMessages := 10
-    var messages []QueueMessage
     if m.moveChannel != nil {
+        var messages []QueueMessage
+        maxMessages := 10
         for i := 0; i < maxMessages; i++ {
             message, ok := <- m.moveChannel
             if !ok {
@@ -82,7 +82,6 @@ func (m *Mover) moveMessages() {
     for {
         messages := m.getBatchOfMessages()
         if len(messages) == 0 {
-            fmt.Println("No messages found to move")
             break
         }
         err := m.putBatchOfMessages(messages)

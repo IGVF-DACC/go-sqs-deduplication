@@ -15,6 +15,7 @@ var Version = "development"
 
 type CommandLineOptions struct {
     QueueURL string
+    StorageQueueURL string
     ProfileName string
     NumWorkers int
     MaxInflight int
@@ -27,6 +28,7 @@ type CommandLineOptions struct {
 func parseCommandLineOptions() CommandLineOptions {
     var opts CommandLineOptions
     flag.StringVar(&opts.QueueURL, "queueURL", "", "SQS URL (required)")
+    flag.StringVar(&opts.StorageQueueURL, "storageQueueURL", "", "SQS URL used for storage (required)")
     flag.StringVar(&opts.ProfileName, "profileName", "", "AWS profile to use")
     flag.IntVar(&opts.NumWorkers, "numWorkers", 20, "Number of concurrent workers to use")
     flag.IntVar(&opts.MaxInflight, "maxInflight", 100000, "Maximum number of inflight messages allowed by queue")
@@ -43,6 +45,11 @@ func parseCommandLineOptions() CommandLineOptions {
         flag.PrintDefaults()
         os.Exit(1)
     }
+    if opts.StorageQueueURL == "" {
+        fmt.Println("The 'storageQueueURL' flag is required")
+        flag.PrintDefaults()
+        os.Exit(1)
+    }
     return opts
 }
 
@@ -56,9 +63,16 @@ func main() {
         MessageParser: sqs.InvalidationQueueMessageParser, // Use custom parser for other message formats.
     }
     queue := sqs.NewQueue(config) // Use different queue implementation for other queue types.
+    storageConfig := &sqs.QueueConfig{
+        QueueUrl: &opts.StorageQueueURL,
+        ProfileName: opts.ProfileName,
+        MessageParser: sqs.InvalidationQueueMessageParser,
+    }
+    storageQueue := sqs.NewQueue(storageConfig)
     deduplicator := dedup.NewDeduplicator(
         &dedup.DeduplicatorConfig{
             Queue: queue,
+            StorageQueue: storageQueue,
             NumWorkers: opts.NumWorkers,
             MaxInflight: opts.MaxInflight,
         })

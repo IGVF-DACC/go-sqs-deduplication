@@ -180,7 +180,7 @@ func (d *Deduplicator) initDeleteChannel() {
 
 
 func (d *Deduplicator) initMoveChannel() {
-    d.moveChannel = make(chan QueueMessage)
+    d.moveChannel = make(chan QueueMessage, 10000)
 }
 
 
@@ -254,20 +254,27 @@ func (d *Deduplicator) sendMessagesForFlushingToStorage() {
     d.wg.Add(1)
     go func() {
         defer d.wg.Done()
+        var keepMessages []QueueMessage
         d.state.mu.Lock()
-        defer d.state.mu.Unlock()
-        for _, message := range d.state.keepMessages {
+        // Make local copy so can release lock.
+        for _, value := range d.state.keepMessages {
+            keepMessages = append(keepMessages, value)
+        }
+        d.state.mu.Unlock()
+        for _, message := range keepMessages {
             d.moveChannel <- message
         }
-        close(d.keepChannel)
+        close(d.moveChannel)
     }()
 }
 
 
 func (d *Deduplicator) printInfo() {
     d.state.mu.Lock()
-    fmt.Println("Unique messages to keep:", len(d.state.keepMessages))
-    fmt.Println("Duplicate messages to delete:", len(d.state.deleteMessages))
+    fmt.Println("Keep messages:", len(d.state.keepMessages))
+    fmt.Println("Delete messages:", len(d.state.deleteMessages))
+    fmt.Println("Stored messages:", len(d.state.storedMessages))
+    fmt.Println("Unique messages (keep + stored):", len(d.state.keepMessages) + len(d.state.storedMessages))
     d.state.mu.Unlock()
 }
 
