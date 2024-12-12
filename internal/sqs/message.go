@@ -14,15 +14,8 @@ type InvalidationQueueMessageData struct {
 }
 
 
-type InvalidationQueueMessageMetadata struct {
-    XID string `json:"xid"`
-    TID string `json:"tid"`
-}
-
-
 type InvalidationQueueMessage struct {
     Data InvalidationQueueMessageData `json:"data"`
-    Metadata InvalidationQueueMessageMetadata `json:"metadata"`
     messageID string
     receiptHandle string
     rawBody string
