@@ -7,7 +7,6 @@ import (
     "testing"
     "github.com/IGVF-DACC/go-sqs-deduplication/internal/memory"
     "github.com/IGVF-DACC/go-sqs-deduplication/internal/dedup"
-    "fmt"
 )
 
 
@@ -82,9 +81,6 @@ func TestMoverFlushToStorage(t *testing.T) {
     mover := dedup.NewMover(fromQueue, toQueue, moveChannel, state, true, wg)
     mover.Start()
     wg.Wait()
-    fmt.Println(state.KeepMessagesLen())
-    fmt.Println(state.DeleteMessagesLen())
-    fmt.Println(state.StoredMessagesLen())
     if state.KeepMessagesLen() != 0 {
         t.Error("Expected 0 messages in keepMessages")
     }
@@ -147,9 +143,6 @@ func TestMoverFlushToStorageWithDuplicates(t *testing.T) {
     mover := dedup.NewMover(fromQueue, toQueue, moveChannel, state, true, wg)
     mover.Start()
     wg.Wait()
-    fmt.Println(state.KeepMessagesLen())
-    fmt.Println(state.DeleteMessagesLen())
-    fmt.Println(state.StoredMessagesLen())
     if state.KeepMessagesLen() != 0 {
         t.Error("Expected 0 messages in keepMessages")
     }
