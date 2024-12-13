@@ -20,10 +20,12 @@ type Puller struct {
 
 
 // Only call with mutex locked.
-func (p *Puller) checkExistingMessage(uniqueID string) (QueueMessage, bool) {
+func (p *Puller) checkIfMessageAlreadyExists(uniqueID string) (QueueMessage, bool) {
+    // Message already seen in this round of pulling.
     if keepMessage, exists := p.state.keepMessages[uniqueID]; exists {
         return keepMessage, true
     }
+    // Message already seen and persisted to storage queue.
     if storedMessage, exists := p.state.storedMessages[uniqueID]; exists {
         return storedMessage, true
     }
@@ -34,15 +36,17 @@ func (p *Puller) checkExistingMessage(uniqueID string) (QueueMessage, bool) {
 // Only call with mutex locked.
 func (p *Puller) processMessages(messages []QueueMessage) {
     for _, message := range messages {
-        existingMessage, exists := p.checkExistingMessage(message.UniqueID())
-        if exists {
+        existingMessage, alreadyExists := p.checkIfMessageAlreadyExists(message.UniqueID())
+        if alreadyExists {
             if existingMessage.MessageID() != message.MessageID() {
+                // Already seen the UUID, mark message for deletion.
                 p.state.deleteMessages[message.ReceiptHandle()] = struct{}{}
             } else {
                 // If for some reason the same message is delivered more than once from the queue.
                 continue
             }
         } else {
+            // Haven't seen it before, add to messages to keep.
             p.state.keepMessages[message.UniqueID()] = message
         }
     }
