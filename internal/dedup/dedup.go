@@ -41,6 +41,7 @@ type Deduplicator struct {
     keepChannel chan string
     deleteChannel chan string
     moveChannel chan QueueMessage
+    startedFlushToStorage bool
 }
 
 
@@ -295,6 +296,11 @@ func (d *Deduplicator) waitForWorkToFinish() {
 }
 
 
+func (d *Deduplicator) shouldFlushToStorage() bool {
+    return d.atMaxInflight() || d.startedFlushToStorage
+}
+
+
 func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
     d.initPullers()
     d.initDeleters()
@@ -320,9 +326,10 @@ func (d *Deduplicator) pullMessagesAndDeleteDuplicates() {
             fmt.Println("Pulled all messages from queue")
             break
         }
-        if d.atMaxInflight() {
-            fmt.Println("Max inflight for keep messages")
+        if d.shouldFlushToStorage() {
+            fmt.Println("Max inflight for keep messages or already flushing to storage")
             fmt.Println("Flushing keep messages to storage")
+            d.startedFlushToStorage = true
             d.sendMessagesForFlushingToStorage()
             d.startFlushToStorageMovers()
             d.waitForWorkToFinish()
@@ -358,11 +365,17 @@ func (d *Deduplicator) Run() {
 }
 
 
+func (d *Deduplicator) Reset() {
+    d.state.Reset()
+    d.startedFlushToStorage = false
+}
+
+
 func (d *Deduplicator) RunForever(secondsToSleepBetweenRuns int) {
     for {
         d.Run()
         fmt.Println("Sleeping seconds", secondsToSleepBetweenRuns)
         time.Sleep(time.Duration(secondsToSleepBetweenRuns) * time.Second)
-        d.state.Reset()
+        d.Reset()
     }
 }
