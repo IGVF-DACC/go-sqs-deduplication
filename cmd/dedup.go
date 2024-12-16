@@ -19,6 +19,7 @@ type CommandLineOptions struct {
     ProfileName string
     NumWorkers int
     MaxInflight int
+    TimeLimitInSeconds int
     RunForever bool
     SecondsToSleepBetweenRuns int
     ShowVersion bool
@@ -32,6 +33,7 @@ func parseCommandLineOptions() CommandLineOptions {
     flag.StringVar(&opts.ProfileName, "profileName", "", "AWS profile to use")
     flag.IntVar(&opts.NumWorkers, "numWorkers", 20, "Number of concurrent workers to use")
     flag.IntVar(&opts.MaxInflight, "maxInflight", 100000, "Maximum number of inflight messages allowed by queue")
+    flag.IntVar(&opts.TimeLimitInSeconds, "timeLimitInSeconds", 600, "Time limit for pullers to run even if messages still exist on queue")
     flag.BoolVar(&opts.RunForever, "runForever", false, "Runs in a loop with secondsToSleepBetweenRuns")
     flag.IntVar(&opts.SecondsToSleepBetweenRuns,"secondsToSleepBetweenRuns", 60, "Time to sleep between runs if running forever")
     flag.BoolVar(&opts.ShowVersion, "version", false, "Show version")
@@ -75,6 +77,7 @@ func main() {
             StorageQueue: storageQueue,
             NumWorkers: opts.NumWorkers,
             MaxInflight: opts.MaxInflight,
+            TimeLimitInSeconds: opts.TimeLimitInSeconds,
         })
     if opts.RunForever {
         deduplicator.RunForever(opts.SecondsToSleepBetweenRuns)

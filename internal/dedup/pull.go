@@ -14,7 +14,7 @@ type Puller struct {
     messagesExist bool
     timedOut bool
     maxInflight int
-    timeLimitInSeconds time.Duration
+    timeLimitInSeconds int
     wg *sync.WaitGroup
 }
 
@@ -61,7 +61,7 @@ func (p *Puller) atMaxInflight() bool {
 
 // Only call with mutex locked.
 func (p *Puller) atTimeout() bool {
-    if time.Since(p.state.startTime) > p.timeLimitInSeconds * time.Second {
+    if time.Since(p.state.startTime) > time.Duration(p.timeLimitInSeconds) * time.Second {
         return true
     }
     return false
@@ -117,7 +117,7 @@ func (p *Puller) TimedOut() bool {
 }
 
 
-func NewPuller(queue Queue, state *SharedState, messagesExist bool, timedOut bool, maxInflight int, timeLimitInSeconds time.Duration, wg *sync.WaitGroup) *Puller {
+func NewPuller(queue Queue, state *SharedState, messagesExist bool, timedOut bool, maxInflight int, timeLimitInSeconds int, wg *sync.WaitGroup) *Puller {
     return &Puller{
         queue: queue,
         state: state,

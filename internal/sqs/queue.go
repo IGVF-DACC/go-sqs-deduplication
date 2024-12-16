@@ -61,7 +61,7 @@ func (q *Queue) PullMessagesBatch() ([]dedup.QueueMessage, error) {
         QueueUrl: q.config.QueueUrl,
         MaxNumberOfMessages: 10,
         WaitTimeSeconds: 10,
-        VisibilityTimeout: 600,
+        VisibilityTimeout: 900,
     })
     if err != nil {
         return messages, err

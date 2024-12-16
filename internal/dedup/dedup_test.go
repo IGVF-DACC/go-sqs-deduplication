@@ -19,6 +19,7 @@ func TestDeduplicatorHalfDuplicate(t *testing.T) {
         StorageQueue: storageInMemoryQueue,
         NumWorkers: 20,
         MaxInflight: 1500,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -44,6 +45,7 @@ func TestDeduplicatorAllUnique(t *testing.T) {
         StorageQueue: storageInMemoryQueue,
         NumWorkers: 5,
         MaxInflight: 10000,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -69,6 +71,7 @@ func TestDeduplicatorAllDuplicate(t *testing.T) {
         StorageQueue: storageInMemoryQueue,
         NumWorkers: 10,
         MaxInflight: 10000,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -98,6 +101,7 @@ func TestDeduplicatorPartialProcessingBecauseOfMaxInflight(t *testing.T) {
         StorageQueue: storageInMemoryQueue,
         NumWorkers: 30,
         MaxInflight: 100000,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -122,6 +126,7 @@ func TestDeduplicatorPartialProcessingBecauseOfMaxInflight(t *testing.T) {
         StorageQueue: storageInMemoryQueue,
         NumWorkers: 30,
         MaxInflight: 500,
+        TimeLimitInSeconds: 240,
     }
     deduplicator = dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -146,6 +151,7 @@ func TestDeduplicatorPartialProcessingBecauseOfMaxInflight(t *testing.T) {
         StorageQueue: storageInMemoryQueue,
         NumWorkers: 5,
         MaxInflight: 3003,
+        TimeLimitInSeconds: 240,
     }
     deduplicator = dedup.NewDeduplicator(config)
     deduplicator.Run()

@@ -25,6 +25,7 @@ type DeduplicatorConfig struct {
     StorageQueue Queue
     NumWorkers int
     MaxInflight int
+    TimeLimitInSeconds int
 }
 
 
@@ -67,7 +68,7 @@ func (d *Deduplicator) initPullers() {
             messagesExist: true,
             timedOut: false,
             maxInflight: d.config.MaxInflight,
-            timeLimitInSeconds: 240,
+            timeLimitInSeconds: d.config.TimeLimitInSeconds,
         }
         pullers = append(pullers, puller)
     }
