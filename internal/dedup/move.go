@@ -57,19 +57,13 @@ func (m *Mover) deleteBatchOfMessages(messages []QueueMessage) {
 }
 
 
-func (m *Mover) addToStoredMessages(messages []QueueMessage) {
+func (m *Mover) updateState(messages []QueueMessage) {
     m.state.mu.Lock()
     defer m.state.mu.Unlock()
     for _, message := range messages {
+        // Add to storedMessages
         m.state.storedMessages[message.UniqueID()] = message
-    }
-}
-
-
-func (m *Mover) deleteFromKeepMessages(messages []QueueMessage) {
-    m.state.mu.Lock()
-    defer m.state.mu.Unlock()
-    for _, message := range messages {
+        // Delete from keepMessages
         if _, ok := m.state.keepMessages[message.UniqueID()]; ok {
             delete(m.state.keepMessages, message.UniqueID())
         }
@@ -90,8 +84,7 @@ func (m *Mover) moveMessages() {
         }
         m.deleteBatchOfMessages(messages)
         if m.flushToStorage {
-            m.addToStoredMessages(messages)
-            m.deleteFromKeepMessages(messages)
+            m.updateState(messages)
         }
     }
 }
