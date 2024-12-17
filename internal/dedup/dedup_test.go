@@ -13,10 +13,13 @@ func TestDeduplicatorHalfDuplicate(t *testing.T) {
     inMemoryQueue.AddMessages(generatedMessages)
     generatedMessages = memory.GenerateInMemoryMessages(1000)
     inMemoryQueue.AddMessages(generatedMessages)
+    storageInMemoryQueue := memory.NewInMemoryQueue(10)
     config := &dedup.DeduplicatorConfig{
         Queue: inMemoryQueue,
+        StorageQueue: storageInMemoryQueue,
         NumWorkers: 20,
         MaxInflight: 1500,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -36,10 +39,13 @@ func TestDeduplicatorAllUnique(t *testing.T) {
     inMemoryQueue := memory.NewInMemoryQueue(10)
     generatedMessages := memory.GenerateInMemoryMessages(3000)
     inMemoryQueue.AddMessages(generatedMessages)
+    storageInMemoryQueue := memory.NewInMemoryQueue(10)
     config := &dedup.DeduplicatorConfig{
         Queue: inMemoryQueue,
+        StorageQueue: storageInMemoryQueue,
         NumWorkers: 5,
         MaxInflight: 10000,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -59,10 +65,13 @@ func TestDeduplicatorAllDuplicate(t *testing.T) {
     inMemoryQueue := memory.NewInMemoryQueue(10)
     duplicateMessages := memory.MakeDuplicateInMemoryMessages("abc", 4000)
     inMemoryQueue.AddMessages(duplicateMessages)
+    storageInMemoryQueue := memory.NewInMemoryQueue(10)
     config := &dedup.DeduplicatorConfig{
         Queue: inMemoryQueue,
+        StorageQueue: storageInMemoryQueue,
         NumWorkers: 10,
         MaxInflight: 10000,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -79,17 +88,20 @@ func TestDeduplicatorAllDuplicate(t *testing.T) {
 
 
 
-func TestDeduplicatorPartialProcessingBecauseOfMaxInlfight(t *testing.T) {
+func TestDeduplicatorPartialProcessingBecauseOfMaxInflight(t *testing.T) {
     // MaxInflight over total
     inMemoryQueue := memory.NewInMemoryQueue(10)
     generatedMessages := memory.GenerateInMemoryMessages(3000)
     inMemoryQueue.AddMessages(generatedMessages)
     duplicateMessages := memory.MakeDuplicateInMemoryMessages("abc", 5000)
     inMemoryQueue.AddMessages(duplicateMessages)
+    storageInMemoryQueue := memory.NewInMemoryQueue(10)
     config := &dedup.DeduplicatorConfig{
         Queue: inMemoryQueue,
+        StorageQueue: storageInMemoryQueue,
         NumWorkers: 30,
         MaxInflight: 100000,
+        TimeLimitInSeconds: 240,
     }
     deduplicator := dedup.NewDeduplicator(config)
     deduplicator.Run()
@@ -102,40 +114,44 @@ func TestDeduplicatorPartialProcessingBecauseOfMaxInlfight(t *testing.T) {
     if inMemoryQueue.MessagesLen() != 0 {
         t.Error("Queue should be empty")
     }
-
     // MaxInflight under total unique
     inMemoryQueue = memory.NewInMemoryQueue(10)
     generatedMessages = memory.GenerateInMemoryMessages(3000)
     inMemoryQueue.AddMessages(generatedMessages)
     duplicateMessages = memory.MakeDuplicateInMemoryMessages("abc", 5000)
     inMemoryQueue.AddMessages(duplicateMessages)
+    storageInMemoryQueue = memory.NewInMemoryQueue(10)
     config = &dedup.DeduplicatorConfig{
         Queue: inMemoryQueue,
+        StorageQueue: storageInMemoryQueue,
         NumWorkers: 30,
         MaxInflight: 500,
+        TimeLimitInSeconds: 240,
     }
     deduplicator = dedup.NewDeduplicator(config)
     deduplicator.Run()
-    if len(inMemoryQueue.GetDeletedMessages()) != 0 {
-        t.Errorf("Expected 0 messages to be deleted, got %d", len(inMemoryQueue.GetDeletedMessages()))
+    if len(inMemoryQueue.GetDeletedMessages()) != 8000 {
+        t.Errorf("Expected 8000 messages to be deleted, got %d", len(inMemoryQueue.GetDeletedMessages()))
     }
-    if len(inMemoryQueue.GetResetMessages()) != 790 {
-        t.Errorf("Expected 790 messages to be reset, got %d", len(inMemoryQueue.GetResetMessages()))
+    if len(inMemoryQueue.GetResetMessages()) != 0 {
+        t.Errorf("Expected 0 messages to be reset, got %d", len(inMemoryQueue.GetResetMessages()))
     }
-    if inMemoryQueue.MessagesLen() == 0 {
-        t.Error("Queue should have messages")
+    if inMemoryQueue.MessagesLen() != 3001 {
+        t.Errorf("Expected 3001 messages to be on queue, got %d", inMemoryQueue.MessagesLen())
     }
-
     // MaxInflight under total, over total unique
     inMemoryQueue = memory.NewInMemoryQueue(10)
     generatedMessages = memory.GenerateInMemoryMessages(3000)
     inMemoryQueue.AddMessages(generatedMessages)
     duplicateMessages = memory.MakeDuplicateInMemoryMessages("abc", 5000)
     inMemoryQueue.AddMessages(duplicateMessages)
+    storageInMemoryQueue = memory.NewInMemoryQueue(10)
     config = &dedup.DeduplicatorConfig{
         Queue: inMemoryQueue,
+        StorageQueue: storageInMemoryQueue,
         NumWorkers: 5,
         MaxInflight: 3003,
+        TimeLimitInSeconds: 240,
     }
     deduplicator = dedup.NewDeduplicator(config)
     deduplicator.Run()

@@ -18,6 +18,7 @@ type InvalidationQueueMessage struct {
     Data InvalidationQueueMessageData `json:"data"`
     messageID string
     receiptHandle string
+    rawBody string
 }
 
 
@@ -36,6 +37,11 @@ func (m InvalidationQueueMessage) ReceiptHandle() string {
 }
 
 
+func (m InvalidationQueueMessage) RawBody() string {
+    return m.rawBody
+}
+
+
 type messageParser func(rawMessage types.Message) (dedup.QueueMessage, error)
 
 
@@ -48,5 +54,6 @@ func InvalidationQueueMessageParser(rawMessage types.Message) (dedup.QueueMessag
     }
     message.receiptHandle = *rawMessage.ReceiptHandle
     message.messageID = *rawMessage.MessageId
+    message.rawBody = *rawMessage.Body
     return message, err
 }

@@ -2,9 +2,9 @@
 
 ### What
 
-The batch deduplicator works by taking as many messages off an AWS SQS queue as possible (up to `maxInflight`) and deleting duplicates based on a unique identifier. This cycle repeats until all of the messages on the queue have been processed, or the number of unique messages exceeds `maxInflight`. Finally the visibility of unique messages is reset so they show back up on the queue.
+The batch deduplicator works by taking as many messages off an AWS SQS queue as possible (up to `maxInflight`) and deleting duplicates based on a unique identifier. This cycle repeats until all messages in the queue have been processed. If the number of unique messages exceeds `maxInflight`, the unique messages are persisted to storage (in the form of another isolated queue) and deleted from the original queue. Finally, the visibility of unique messages is reset or moved back from the storage queue so that they reappear on the original queue.
 
-Pulling, deleting, and reseting messages happens concurrently by `numWorkers` workers.
+Pulling, deleting, reseting, and moving messages happens concurrently by `numWorkers` workers.
 
 
 The deduplicator expects SQS messages in following format:
@@ -24,12 +24,12 @@ The code can be extended to work with other queues or message formats.
 
 Run once:
 ```bash
-go run cmd/dedup.go -queueURL=someURL -numWorkers=100  -profileName=someProfile
+go run cmd/dedup.go -queueURL=someURL -storageQueueURL=someOtherURL -numWorkers=100  -profileName=someProfile
 ```
 
 Run forever:
 ```bash
-$ go run cmd/dedup.go -queueURL=someURL -numWorkers=50 -runForever -secondsToSleepBetweenRuns=600
+$ go run cmd/dedup.go -queueURL=someURL -storageQueueURL=someOtherURL -numWorkers=50 -runForever -secondsToSleepBetweenRuns=600
 ```
 
 Help:
@@ -46,6 +46,10 @@ Help:
     	Runs in a loop with secondsToSleepBetweenRuns
   -secondsToSleepBetweenRuns int
     	Time to sleep between runs if running forever (default 60)
+  -storageQueueURL string
+    	SQS URL used for storage (required)
+  -version
+    	Show version
 ```
 
 Run tests:

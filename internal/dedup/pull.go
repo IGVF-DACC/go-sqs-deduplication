@@ -14,22 +14,39 @@ type Puller struct {
     messagesExist bool
     timedOut bool
     maxInflight int
-    timeLimitInSeconds time.Duration
+    timeLimitInSeconds int
     wg *sync.WaitGroup
+}
+
+
+// Only call with mutex locked.
+func (p *Puller) checkIfMessageAlreadyExists(uniqueID string) (QueueMessage, bool) {
+    // Message already seen in this round of pulling.
+    if keepMessage, exists := p.state.keepMessages[uniqueID]; exists {
+        return keepMessage, true
+    }
+    // Message already seen and persisted to storage queue.
+    if storedMessage, exists := p.state.storedMessages[uniqueID]; exists {
+        return storedMessage, true
+    }
+    return nil, false
 }
 
 
 // Only call with mutex locked.
 func (p *Puller) processMessages(messages []QueueMessage) {
     for _, message := range messages {
-        if storedMessage, exists := p.state.keepMessages[message.UniqueID()]; exists {
-            if storedMessage.MessageID() != message.MessageID() {
+        existingMessage, alreadyExists := p.checkIfMessageAlreadyExists(message.UniqueID())
+        if alreadyExists {
+            if existingMessage.MessageID() != message.MessageID() {
+                // Already seen the UUID, mark message for deletion.
                 p.state.deleteMessages[message.ReceiptHandle()] = struct{}{}
             } else {
                 // If for some reason the same message is delivered more than once from the queue.
                 continue
             }
         } else {
+            // Haven't seen it before, add to messages to keep.
             p.state.keepMessages[message.UniqueID()] = message
         }
     }
@@ -44,7 +61,7 @@ func (p *Puller) atMaxInflight() bool {
 
 // Only call with mutex locked.
 func (p *Puller) atTimeout() bool {
-    if time.Since(p.state.startTime) > p.timeLimitInSeconds * time.Second {
+    if time.Since(p.state.startTime) > time.Duration(p.timeLimitInSeconds) * time.Second {
         return true
     }
     return false
@@ -100,7 +117,7 @@ func (p *Puller) TimedOut() bool {
 }
 
 
-func NewPuller(queue Queue, state *SharedState, messagesExist bool, timedOut bool, maxInflight int, timeLimitInSeconds time.Duration, wg *sync.WaitGroup) *Puller {
+func NewPuller(queue Queue, state *SharedState, messagesExist bool, timedOut bool, maxInflight int, timeLimitInSeconds int, wg *sync.WaitGroup) *Puller {
     return &Puller{
         queue: queue,
         state: state,

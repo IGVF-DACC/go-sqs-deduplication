@@ -17,6 +17,7 @@ func TestPullerAllUnique(t *testing.T) {
     state := dedup.NewSharedState(
         make(map[string]dedup.QueueMessage),
         make(map[string]struct{}),
+        make(map[string]dedup.QueueMessage),
     )
     wg := &sync.WaitGroup{}
     puller1 := dedup.NewPuller(
@@ -61,6 +62,7 @@ func TestPullerHalfDuplicates(t *testing.T) {
     state := dedup.NewSharedState(
         make(map[string]dedup.QueueMessage),
         make(map[string]struct{}),
+        make(map[string]dedup.QueueMessage),
     )
     wg := &sync.WaitGroup{}
     puller1 := dedup.NewPuller(
@@ -100,6 +102,7 @@ func TestPullerAllDuplicates(t *testing.T) {
     state := dedup.NewSharedState(
         make(map[string]dedup.QueueMessage),
         make(map[string]struct{}),
+        make(map[string]dedup.QueueMessage),
     )
     wg := &sync.WaitGroup{}
     puller1 := dedup.NewPuller(
@@ -139,6 +142,7 @@ func TestPullerMaxInflight(t *testing.T) {
     state := dedup.NewSharedState(
         make(map[string]dedup.QueueMessage),
         make(map[string]struct{}),
+        make(map[string]dedup.QueueMessage),
     )
     wg := &sync.WaitGroup{}
     puller1 := dedup.NewPuller(
@@ -181,6 +185,7 @@ func TestPullerTimedOut(t *testing.T) {
     state := dedup.NewSharedState(
         make(map[string]dedup.QueueMessage),
         make(map[string]struct{}),
+        make(map[string]dedup.QueueMessage),
     )
     wg := &sync.WaitGroup{}
     puller1 := dedup.NewPuller(
